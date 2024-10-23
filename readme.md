@@ -1,4 +1,4 @@
-# Lista de Projeto 01 - Circuitos Digitais
+# Lista de Projeto 03 - Circuitos Digitais
 Projeto direcionado à disciplina de Circuitos Digitais, ministrada pelo Prof Dr Pedro Thiago Valério de Souza no período 2024.1, na Universidade Federal Rural do Semi-Árido (UFERSA).
 
 # Autores 
