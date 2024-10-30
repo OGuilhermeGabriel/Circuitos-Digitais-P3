@@ -23,7 +23,7 @@ Flip-Flop D com entrada de reset assíncrono.
 
 Um Flip-Flop tipo D pode ser caracterizado da seguinte forma abaixo:
 
-![FFd](/Problema%2001/Assets/FFd.jpg)
+![FFd](/Problema%2001/Assets/FFd_NOVO.jpg)
 
 Note que, temos a saída *q* e, além das entradas de dados *d* e de clock *clk*, também temos a entrada assincrona do reset.
 
@@ -61,14 +61,182 @@ Um Flip-Flop tipo JK pode ser caracterizado da seguinte forma abaixo:
 
 ![FFjk](/Problema%2002/Assets/FFjk.jpg)
 
+Diferentemente do flip flop tipo D, outra lógica será aplicada para a implementação do flip flop tipo JK. Confira abaixo a sua respectiva tabela verdade, a qual relaciona as entredas JK com a saída Q, o *clk* for gatilhado pela borda de subida: 
+
+| *J* | *K* | *Q* |
+| --- | --- | --- |
+|  0  |  0  | *Q* |
+|  0  |  1  |  0  |
+|  1  |  0  |  1  |
+|  1  |  1  |*Q'* |
+
+
+Note que agora será necessário implementar no procedimento "*always*" um case para descrever todas as quatro possibilidades descritas na tabela verdade 
+
 ## Descrição em *systemverilog*
+
+~~~
+module FFjk (
+    //declarando as entradas e saídas do ff-jk
+    input logic clk, rst,
+    input logic j, k,
+    // obs: "y" = q'
+    output logic q, y
+);
+    // atribuindo à "y" o complemento da saída do ff-jk "q"
+    assign y = ~q;
+    // descrevendo a lógica do ffjk 
+    always_ff @(posedge clk or posedge rst) begin
+        if (rst == 1'b1) begin
+            q <= 1'b0;
+        end else begin // implementando a lógica do ff-jk 
+            case ({j,k})
+                2'b00 : q <= q; // mantém o estado
+                2'b01 : q <= 1'b0; // reseta
+                2'b10 : q <= 1'b1; // seta
+                2'b11 : q <= ~q; // complementa
+            endcase 
+        end 
+    end
+    
+endmodule
+~~~
 
 # Problema 03
 Uma máquina de estados que represente o seguinte comportamento: Projete uma máquina de estados que tem uma entrada gcnt e três saídas, *x*, *y* e *z*. As saídas *xyz* geram uma sequência chamada “código Gray” em que exatamente uma das três saídas muda de 0 para 1 ou de 1 para 0. A sequência em código Grau que a MdE deve produzir é 000, 010, 011, 001, 101, 111, 110, 100 voltando a se repetir. A saída deve mudar apenas na borda de subida do relógio quando *gcnt* = 1. Faça 000 ser o estado inicial.
 
 ## Resolução 
 
+Esta máquina de estados pode ser descrita tendo como base o seu diagrama de transição de estados, o qual pode ser interpretado da seguinte forma:
+
+![diagrama_fsm](/Problema%2003/Assets/diagrama_fsm.jpg)
+
 ## Descrição em *systemverilog*
+~~~
+module mde (
+    // declarando o clk e o rst 
+    input logic clk, rst,
+    // declarando as entradas e saídas da fsm 
+    input logic gcnt, 
+    // essa sequência de 3 bits será respectivamente xyz = b2b1b0
+    output logic [2:0] saida  
+);
+
+    // DEFININDO A MÁQUINA DE ESTADOS 
+
+    // 1) Definindo os estados da máquina de estados (e os tipos de variáveis de estados: t_state) - definirei aqui os estados da fsm
+    typedef enum {a, b, c, d, e, f, g, h} t_state;
+    // definindo as variáveis de estado próxima e atual tendo como base o tipo de variável "t_state"
+    t_state currState, nextState; 
+
+    // PROCEDIMENTO INICIAL 
+    initial begin
+        // definindo o estado "a" como o estado inicial
+        currState = a;
+        // estado a -> xyz = 000
+        saida = 3'b000; 
+    end 
+
+    // 2) Registrador de estados
+
+    always @(posedge clk, posedge rst) begin
+        if (rst == 1'b1) begin
+            currState = a;
+        end
+        else begin
+            currState = nextState; 
+        end 
+    end 
+
+    // 3) Lógica de estado próximo da fsm
+
+    always @* begin
+        case (currState)
+            a : begin
+                if (gcnt == 1'b1) nextState = b;
+                else nextState = a; 
+            end
+            b : begin
+                if (gcnt == 1'b1) nextState = c;
+                else nextState = b; 
+            end
+            c : begin
+                if (gcnt == 1'b1) nextState = d;
+                else nextState = c; 
+            end
+            d : begin
+                if (gcnt == 1'b1) nextState = e;
+                else nextState = d; 
+            end
+            e : begin
+                if (gcnt == 1'b1) nextState = f;
+                else nextState = e; 
+            end
+            f : begin
+                if (gcnt == 1'b1) nextState = g;
+                else nextState = f; 
+            end
+            g : begin
+                if (gcnt == 1'b1) nextState = h;
+                else nextState = g; 
+            end
+            h : begin
+                if (gcnt == 1'b1) nextState = a;
+                else nextState = h; 
+            end
+        endcase  
+    end 
+
+    // 4) Lógica de saída próxima da fsm 
+
+    always @* begin
+        case(currState)
+            a : begin
+                saida = 3'b000;
+            end
+            b : begin
+                saida = 3'b010;
+            end
+            c : begin
+                saida = 3'b011;
+            end
+            d : begin
+                saida = 3'b001;
+            end
+            e : begin
+                saida = 3'b101;
+            end
+            f : begin
+                saida = 3'b111;
+            end
+            g : begin
+                saida = 3'b110;
+            end
+            h : begin
+                saida = 3'b100;
+            end
+        endcase
+    end
+endmodule
+~~~
+
+Note que, para definir a máquina de estados, faz se necessária a implementação de 4 passos: 
+
+- Passo 1: Definir os estados da máquina de estados 
+
+Neste passo, serão definidos todos os estados que compõe a *fsm*. Onde cada estado é respectivamente uma combinação das saídas *xyz*.
+
+- Passo 2: Registrador de estados
+
+Aqui você irá definir a lógica padrão para que o corra a transição de estados. Ou seja, mudar do estado atual para o próximo estado. 
+
+- Passo 3: Lógica de estado próximo
+
+Como o nome do passo já diz, aqui você irá implementar a lógica do próximo estado da *fsm* tendo como base o estado atual que a máquina está situada. 
+
+- Passou 4: Lógica de saída próxima 
+
+Similar ao passo anterior, este passo é responsável por associar as saídas da máquina de estados com os seus respectivos estados. 
 
 # Problema 04
 Um registrador de 4 bits de carga paralela, de tal forma que quando *load* = 1, realiza-se a carga paralela e quando *clr* = 1, a saída do registrador é zerada, independente do sinal de relógio.
