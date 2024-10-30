@@ -242,12 +242,66 @@ Similar ao passo anterior, este passo é responsável por associar as saídas da
 Um registrador de 4 bits de carga paralela, de tal forma que quando *load* = 1, realiza-se a carga paralela e quando *clr* = 1, a saída do registrador é zerada, independente do sinal de relógio.
 
 ## Resolução 
+Um registrador de 4 bits pode ser representado como uma conjunto de flip-flops tipo D interligados de forma síncrona ao *clk* como mostra abaixo: 
+
+![reg_elementar](/Problema%2004/Assets/reg_elementar.jpg)
+
+Mas, além disso, faz se necessário implementar dois sinais: o sinal de *clear* (*clr*) para zerar o registrador e o sinal de *load* (*ld*) para realizar a carga paralela. Ambos os sinais serão implementados na descrição, utilizando como base um registrador elementar de 4 bits.
 
 ## Descrição em *systemverilog*
 
+~~~
+module reg4b (
+    // declarando as entradas e saídas do registrador de 4b
+    input logic clk, clr, ld,
+    // entrada do reg_4b = 4 entradas dos ff-d
+    input logic [3:0] d,
+    // saída do reg_4b = 4 saídas dos ff-d
+    output logic [3:0] q
+);
+
+    // implementando a lógica sequencial do registrador
+    always_ff @(posedge clk or posedge clr) begin
+        if (clr == 1'b1)
+            // clr = 1 -> zera o registrador (zera os ff-d's)
+            q <= 4'b0000;   
+        else if (ld)
+            // a saída do registrador recebe os dados da entrada [Carga Paralela]
+            q <= d;  
+    end 
+endmodule
+~~~
+
 # Problema 05
-Um contador up/down counter de 8 bits. Quando *M* = 1, realiza-se a contagem crescente. Quando *M* = 0, realiza-se a contagem decrescente.
+Um contador *up/down counter* de 8 bits. Quando *M* = 1, realiza-se a contagem crescente. Quando *M* = 0, realiza-se a contagem decrescente.
 
 ## Resolução 
 
+Um contador *up/down counter* é um contador que hora vai contar em ordem crescente, incrementando os valores e hora vai contar de forma decrescente, decrementando os valores. O que irá definir se no momento ele irá incrementar ou decrementar é justamente o sinal de controle *M* localizado na entrada do contador. 
+
 ## Descrição em *systemverilog*
+
+~~~
+module counterupdown (
+    // implementados as entradas e saídas do controlador 
+    input logic clk, rst, 
+    // implementando o sinal de controle M
+    input logic M,
+    // saída em 8 bits do contador 
+    output logic [7:0] count 
+);
+
+    // implementando a lógica sequencial do contador 
+    always_ff @(posedge clk or posedge rst) begin
+        if (rst) begin
+            count <= 8'b00000000; // resetando o contador 
+        end else begin
+            if (M == 1'b1) begin
+                count <= count + 1; // M = 1 -> incrementa  
+            end else begin
+                count <= count - 1; // M = 0 -> decrementa 
+            end  
+        end 
+    end
+endmodule 
+~~~
